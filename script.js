@@ -134,11 +134,16 @@ function imageZoom(imgID, imgID_2, imgID_3, resultID, resultID_2, resultID_3) {
 
 var original_path = "images/original";
 var our_path = "images/our";
-var lanczos_path = "images/lanczos";
+var their_path = "images/their";
 var index_image = -1;
-var imgs = ['0.png', '1.png'] 
+var num_images = 2
+var imgs = []
+for (var ii = 0; ii < num_images; ii++) {
+    imgs.push(ii + ".png")
+}
+
 var currentdate = new Date(); 
- 
+var answers = [];
 
 in_progress = false;
 window.onbeforeunload = function() {
@@ -148,29 +153,15 @@ if (in_progress) {
     return;
 }
 };
- 
-function sendAnswer(resp) {
-    let date = "h2z-"+ currentdate.getDate() + (currentdate.getMonth()+1) + currentdate.getFullYear() + '-' + currentdate.getHours() +  currentdate.getMinutes() + currentdate.getSeconds() + Math.random().toString(36).substr(2, 5);;
-    var result = jQuery.ajax({
-        type: "POST",
-        url: "result.php",
-        data: {'img': imgs[index_image], 'method': resp, 'file': date }
-        });
-        
-    return result;
-}
 
-function answer(method) { 
-    $('.btn').prop('disabled', true); 
-    var ans = sendAnswer(method);   
-    
-    ans.done(function(msg) {
-        get_the_next_image();
-        $('.btn').prop('disabled', false);
-    });
-    ans.fail(function(err) {
-        alert( "error", err );
-    }); 
+
+function answer(method) {
+    $('.btn').prop('disabled', true);
+    answers[index_image] = method;
+    get_the_next_image();
+    $('.btn').prop('disabled', false);
+
+
 }
  
 function select(method){  
@@ -182,6 +173,8 @@ function select(method){
 
 function end() {
     in_progress = false;
+    console.log(answers);
+
     $('#content').hide();
     $('.end').show();
 }
@@ -193,11 +186,12 @@ function start() {
     $('#content').show();
 }
 
-function get_the_next_image(){ 
+function get_the_next_image(){
+    in_progress = true;
     index_image = index_image + 1;
     
     if(imgs[index_image]){  
-        document.getElementById("original").src = original_path + "/" + imgs[index_image];  
+        // document.getElementById("original").src = original_path + "/" + imgs[index_image];
         
         $("#left_btn").replaceWith($("#left_btn").clone())
         $("#right_btn").replaceWith($("#right_btn").clone())
@@ -208,15 +202,15 @@ function get_the_next_image(){
             document.getElementById("left_btn").addEventListener("click",  function() {  answer('our');}) 
             
             right = document.getElementById("right")
-            right.src = lanczos_path + "/" + imgs[index_image];
-            document.getElementById("right_btn").addEventListener("click", function() {   answer('lanczos');})  
+            right.src = their_path + "/" + imgs[index_image];
+            document.getElementById("right_btn").addEventListener("click", function() {   answer('their');})
              
         }
         else {
             left = document.getElementById("left")
-            left.src = lanczos_path + "/" + imgs[index_image];
+            left.src = their_path + "/" + imgs[index_image];
             document.getElementById("left_btn").addEventListener("click", function() {  
-            answer('lanczos');}) 
+            answer('their');})
             
             right = document.getElementById("right")
             right.src = our_path + "/" + imgs[index_image];
@@ -228,7 +222,18 @@ function get_the_next_image(){
           end();
     }
      
-    imageZoom("original", "left", "right", "original_zoom", "left_zoom", "right_zoom");  
+    // imageZoom("original", "left", "right", "original_zoom", "left_zoom", "right_zoom");
     
     $('#counter').text("Image " + (index_image + 1) + " of " + imgs.length);
+}
+
+function export2txt() {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(answers, null, 2)], {
+    type: "text/plain"
+  }));
+  a.setAttribute("download", "data.txt");
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
